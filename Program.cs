@@ -2,6 +2,7 @@
 using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using GodBot;
+using GodBot.Features.Fun.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -20,14 +21,15 @@ var host = Host.CreateDefaultBuilder()
 
         config.Token = Environment.GetEnvironmentVariable("DISCORD_TOKEN") ?? string.Empty;
     })
-    .UseInteractionService((context, config) =>
+    .UseInteractionService((_, config) =>
     {
         config.LogLevel = LogSeverity.Info;
         config.UseCompiledLambda = true;
     })
-    .ConfigureServices((context, services) =>
+    .ConfigureServices((_, services) =>
     {
-        //Add any other services here
+        services.AddSingleton<JokeService>();
+        services.AddSingleton<MemeService>();
         services.AddHostedService<InteractionHandler>();
     }).Build();
 
