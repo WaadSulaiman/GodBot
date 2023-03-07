@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Victoria.Node;
 
 namespace GodBot;
 internal class InteractionHandler : DiscordClientService
@@ -15,17 +16,19 @@ internal class InteractionHandler : DiscordClientService
     private readonly InteractionService _interactionService;
     private readonly IHostEnvironment _environment;
     private readonly IConfiguration _configuration;
+    private readonly LavaNode _lavaNode;
 
-    public InteractionHandler(DiscordSocketClient client, ILogger<DiscordClientService> logger, IServiceProvider provider, InteractionService interactionService, IHostEnvironment environment, IConfiguration configuration) : base(client, logger)
+    public InteractionHandler(DiscordSocketClient client, ILogger<DiscordClientService> logger, IServiceProvider provider, InteractionService interactionService, IHostEnvironment environment, IConfiguration configuration, LavaNode lavaNode) : base(client, logger)
     {
         _provider = provider;
         _interactionService = interactionService;
         _environment = environment;
         _configuration = configuration;
+        _lavaNode = lavaNode;
     }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        Client.Ready += OnReadyAsync;
         // Process the InteractionCreated payloads to execute Interactions commands
         Client.InteractionCreated += HandleInteraction;
 
@@ -43,6 +46,12 @@ internal class InteractionHandler : DiscordClientService
         else
             await _interactionService.RegisterCommandsGloballyAsync();
 
+    }
+
+    private async Task OnReadyAsync()
+    {
+        if (!_lavaNode.IsConnected)
+            await _lavaNode.ConnectAsync();
     }
 
     private Task ComponentCommandExecuted(ComponentCommandInfo commandInfo, IInteractionContext context, IResult result)

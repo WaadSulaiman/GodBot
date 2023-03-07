@@ -2,9 +2,11 @@
 using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using GodBot;
-using GodBot.Features.Fun.Services;
+using GodBot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Victoria;
+using Victoria.Node;
 
 DotNetEnv.Env.Load();
 var host = Host.CreateDefaultBuilder()
@@ -25,11 +27,15 @@ var host = Host.CreateDefaultBuilder()
     {
         config.LogLevel = LogSeverity.Info;
         config.UseCompiledLambda = true;
+        config.DefaultRunMode = Discord.Interactions.RunMode.Async;
     })
     .ConfigureServices((_, services) =>
     {
+        services.AddLavaNode(x => x.SelfDeaf = true);
         services.AddSingleton<JokeService>();
         services.AddSingleton<MemeService>();
+        services.AddSingleton<MusicService>();
+        services.AddSingleton<LavaNode>();
         services.AddHostedService<InteractionHandler>();
     }).Build();
 
