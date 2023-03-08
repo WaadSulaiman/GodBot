@@ -1,5 +1,4 @@
 using Discord.Interactions;
-using GodBot.Models;
 using GodBot.Services;
 
 namespace GodBot.Modules;
