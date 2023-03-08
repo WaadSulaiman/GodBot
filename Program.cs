@@ -37,6 +37,7 @@ var host = Host.CreateDefaultBuilder()
         services.AddSingleton<MusicService>();
         services.AddSingleton<LavaNode>();
         services.AddHostedService<InteractionHandler>();
+        services.AddHostedService<BotStatusService>();
     }).Build();
 
 await host.RunAsync();
