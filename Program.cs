@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Victoria;
 using Victoria.Node;
+using Victoria.WebSocket;
 
 DotNetEnv.Env.Load();
 var host = Host.CreateDefaultBuilder()
@@ -31,11 +32,17 @@ var host = Host.CreateDefaultBuilder()
     })
     .ConfigureServices((_, services) =>
     {
-        services.AddLavaNode(x => x.SelfDeaf = true);
+        services.AddLavaNode(x =>
+        {
+            x.SelfDeaf = true;
+            x.SocketConfiguration = new WebSocketConfiguration
+            {
+                BufferSize = UInt16.MaxValue
+            };
+        });
         services.AddSingleton<JokeService>();
         services.AddSingleton<MemeService>();
         services.AddSingleton<MusicService>();
-        services.AddSingleton<LavaNode>();
         services.AddHostedService<InteractionHandler>();
         services.AddHostedService<BotStatusService>();
     }).Build();

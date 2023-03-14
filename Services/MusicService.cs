@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Victoria.Node;
 using Victoria.Node.EventArgs;
@@ -8,38 +7,33 @@ using Victoria.Player;
 namespace GodBot.Services;
 public sealed class MusicService
 {
-    private readonly LavaNode _lavaNode;
+    public readonly LavaNode LavaNode;
     private readonly ILogger _logger;
-    public readonly HashSet<ulong> VoteQueue;
     private readonly ConcurrentDictionary<ulong, CancellationTokenSource> _disconnectTokens;
 
     public MusicService(LavaNode lavaNode, ILoggerFactory loggerFactory)
     {
-        _lavaNode = lavaNode;
+        LavaNode = lavaNode;
         _logger = loggerFactory.CreateLogger<LavaNode>();
         _disconnectTokens = new ConcurrentDictionary<ulong, CancellationTokenSource>();
 
-        VoteQueue = new HashSet<ulong>();
-
-        _lavaNode.OnTrackEnd += OnTrackEndAsync;
-        _lavaNode.OnTrackStart += OnTrackStartAsync;
-        _lavaNode.OnStatsReceived += OnStatsReceivedAsync;
-        _lavaNode.OnUpdateReceived += OnUpdateReceivedAsync;
-        _lavaNode.OnWebSocketClosed += OnWebSocketClosedAsync;
-        _lavaNode.OnTrackStuck += OnTrackStuckAsync;
-        _lavaNode.OnTrackException += OnTrackExceptionAsync;
+        LavaNode.OnTrackEnd += OnTrackEndAsync;
+        LavaNode.OnTrackStart += OnTrackStartAsync;
+        LavaNode.OnWebSocketClosed += OnWebSocketClosedAsync;
+        LavaNode.OnTrackStuck += OnTrackStuckAsync;
+        LavaNode.OnTrackException += OnTrackExceptionAsync;
     }
 
-    private static Task OnTrackExceptionAsync(TrackExceptionEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
+    private async Task OnTrackExceptionAsync(TrackExceptionEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
     {
         arg.Player.Vueue.Enqueue(arg.Track);
-        return arg.Player.TextChannel.SendMessageAsync($"{arg.Track} has been requeued because it threw an exception.");
+        await arg.Player.TextChannel.SendMessageAsync($"`{arg.Track.Title}` has been requeued because it threw an exception.");
     }
 
-    private static Task OnTrackStuckAsync(TrackStuckEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
+    private async Task OnTrackStuckAsync(TrackStuckEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
     {
         arg.Player.Vueue.Enqueue(arg.Track);
-        return arg.Player.TextChannel.SendMessageAsync($"{arg.Track} has been requeued because it got stuck.");
+        await arg.Player.TextChannel.SendMessageAsync($"`{arg.Track.Title}` has been requeued because it got stuck.");
     }
 
     private Task OnWebSocketClosedAsync(WebSocketClosedEventArg arg)
@@ -47,26 +41,25 @@ public sealed class MusicService
         _logger.LogCritical($"{arg.Code} {arg.Reason}");
         return Task.CompletedTask;
     }
-
-    private Task OnStatsReceivedAsync(StatsEventArg arg)
+    private async Task OnTrackStartAsync(TrackStartEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
     {
-        _logger.LogInformation(JsonSerializer.Serialize(arg));
-        return Task.CompletedTask;
+        _logger.LogInformation($"Started playing {arg.Track}.");
+        await arg.Player.TextChannel.SendMessageAsync($"Started playing `{arg.Track.Title}`.");
     }
-
-    private static Task OnUpdateReceivedAsync(UpdateEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
+    private async Task OnTrackEndAsync(TrackEndEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
     {
-        return arg.Player.TextChannel.SendMessageAsync(
-            $"Player update received: {arg.Position}/{arg.Track?.Duration}");
-    }
+        if (arg.Reason is TrackEndReason.Finished)
+        {
+            await arg.Player.TextChannel.SendMessageAsync($"Finished playing `{arg.Track.Title}`.");
+        }
 
-    private static Task OnTrackStartAsync(TrackStartEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
-    {
-        return arg.Player.TextChannel.SendMessageAsync($"Started playing {arg.Track}.");
-    }
+        if (!arg.Player.Vueue.TryDequeue(out var track))
+        {
+            await arg.Player.TextChannel.SendMessageAsync("Queue completed! Please add more tracks to rock n' roll!");
+            return;
+        }
 
-    private static Task OnTrackEndAsync(TrackEndEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
-    {
-        return arg.Player.TextChannel.SendMessageAsync($"Finished playing {arg.Track}.");
+        if (track != null)
+            await arg.Player.PlayAsync(track);
     }
 }
