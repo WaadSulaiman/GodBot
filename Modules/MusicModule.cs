@@ -279,7 +279,7 @@ public class MusicModule : InteractionModuleBase<SocketInteractionContext>
             .WithAuthor(track.Author, Context.Client.CurrentUser.GetAvatarUrl(), track.Url)
             .WithTitle($"Now Playing `{track.Title}`.")
             .WithImageUrl(artwork)
-            .WithFooter($"{track.Position}/{track.Duration}");
+            .WithFooter($"Duration `{track.Duration}`.");
 
         await RespondAsync(embed: embed.Build());
     }

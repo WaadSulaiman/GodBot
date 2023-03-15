@@ -44,7 +44,7 @@ public sealed class MusicService
     private async Task OnTrackStartAsync(TrackStartEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
     {
         _logger.LogInformation($"Started playing {arg.Track}.");
-        await arg.Player.TextChannel.SendMessageAsync($"Started playing `{arg.Track.Title}`.");
+        await arg.Player.TextChannel.SendMessageAsync($"Started playing `{arg.Track.Title}`, duration `{arg.Track.Duration}`.");
     }
     private async Task OnTrackEndAsync(TrackEndEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
     {
