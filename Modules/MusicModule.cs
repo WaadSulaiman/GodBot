@@ -179,6 +179,26 @@ public class MusicModule : InteractionModuleBase<SocketInteractionContext>
         }
     }
 
+    [SlashCommand("volume", "I will adjust the volume accordingly 🔊")]
+    public async Task VolumeAsync(ushort volume)
+    {
+        if (!_service.LavaNode.TryGetPlayer(Context.Guild, out var player))
+        {
+            await RespondAsync("I'm not connected to a voice channel.");
+            return;
+        }
+
+        try
+        {
+            await player.SetVolumeAsync(volume);
+            await RespondAsync($"I've changed the player volume to {volume}.");
+        }
+        catch (Exception exception)
+        {
+            await RespondAsync(exception.Message);
+        }
+    }
+
     [SlashCommand("skip", "I will skip the currently playing track ⏩.")]
     public async Task SkipAsync()
     {
